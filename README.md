@@ -39,6 +39,23 @@ A native macOS notification pops up instantly. The continuation prompt is on you
 
 ---
 
+## The problem — Cursor has no memory between chats
+
+Every time you open a new Cursor chat, the agent starts completely blind. No context, no history, no idea what you were building. Here's what actually happens when you try to recover that context:
+
+| Scenario | Tool calls | Tokens consumed | Latency | Accuracy |
+|---|:---:|:---:|:---:|---|
+| **cursor-compact** | 1 (delete the injected rule) | ~400–600 | ~1 sec | High — structured, curated by the agent that had full context |
+| **Cursor grepping transcripts** | 3–6+ (list dir, grep, read, parse) | ~5,000–15,000 | 10–30 sec | Medium — raw noise, may miss key decisions |
+| **Manual paste by you** | 0 | ~3,000–8,000 | 3–10 min your time | Depends on what you remember |
+| **Blind start** | 0 | 0 | 0 | None — agent asks from scratch |
+
+**Why grepping transcripts is expensive:** raw `.jsonl` files contain every tool call, every file read, every failed attempt from the session. The agent sifts through all of it, burning tokens on noise, before it can even start helping you. It also doesn't know what *mattered* — a curated 500-token summary beats a 12,000-token raw dump every time.
+
+cursor-compact flips the model: the **previous agent** (who had full context and knew what was important) distills the session down to signal only. The **next agent** gets a clean briefing in under a second.
+
+---
+
 ## How it works
 
 ### Step 1 — You type `/compact`
